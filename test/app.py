@@ -6,8 +6,8 @@ import bottle
 
 @bottle.route('/accept_binlog', method='POST')
 def accept_binlog():
-    data =bottle.request.body.readlines()
-    print 'data: ' + str(data)
+    data = bottle.request.body.readlines()
+    print str(data)
     return 'hi, binlog'
 
-run(host='0.0.0.0', port=8280)
+run(host='0.0.0.0', port=8280, quiet=True)

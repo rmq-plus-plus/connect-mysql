@@ -2,41 +2,48 @@ package main
 
 import (
 	"01-connect-mysql/main/river"
+	"01-connect-mysql/main/utils"
 	"encoding/json"
 	"fmt"
-	"github.com/go-mysql-org/go-mysql/mysql"
 	"os"
 )
 
 func main() {
-	var inputJsonString = ""
+	var inputFile = ""
 	if len(os.Args) > 1 {
-		inputJsonString = os.Args[1]
+		inputFile = os.Args[1]
 	} else {
-		fmt.Println("输入参数错误")
+		fmt.Println("请指定输入参数文件路径")
+		return
+	}
+	inputString, err1 := utils.ReadAllFile(inputFile)
+	if err1 != nil {
+		fmt.Println("输入参数文件读取失败" + err1.Error())
 		return
 	}
 	var input = &MainInput{}
-	err := json.Unmarshal([]byte(inputJsonString), input)
-	if err != nil {
-		fmt.Println("输入参数解析失败" + err.Error() + "\n" + inputJsonString)
+	err2 := json.Unmarshal([]byte(inputString), input)
+	if err2 != nil {
+		fmt.Println("输入参数解析失败" + err2.Error() + "\n" + inputString)
 	}
 
 	initInput(input)
 }
 
 func initInput(input *MainInput) {
+	writer := river.NewBinlogHttpWirter(input.BinlogReciever.Url, input.EventSource, input.EventType)
 	var binlogDumper = river.NewBinlogDumper(
-		input.MysqlConfig.To(),
-		river.NewBinlogHttpWirter(input.BinlogReciever.Url, input.EventSource, input.EventType),
+		input.SourceCfg,
+		river.NewHandler(writer),
 	)
-	if input.SyncInfo.IsFromGtid() {
-		binlogDumper.ReceiveBinlogByGtid(mysql.MySQLFlavor, input.SyncInfo.Gtid)
+	if input.SyncFrom.IsFromGtid() {
+		err := binlogDumper.StartFromGTID(input.SyncFrom.Gtid)
+		if err != nil {
+			fmt.Println("StartFromGTID失败", err)
+			return
+		}
 		return
 	}
-	if input.SyncInfo.IsFromOffset() {
-		binlogDumper.ReceiveBinlogByPostion(input.SyncInfo.BinlogFileName, input.SyncInfo.Offset)
-		return
-	}
+
 	fmt.Println("gtid和位点信息都没有传入， 至少传一个")
 }

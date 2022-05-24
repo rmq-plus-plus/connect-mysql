@@ -1,15 +1,15 @@
 package main
 
 import (
-	"github.com/go-mysql-org/go-mysql/replication"
+	"github.com/go-mysql-org/go-mysql/canal"
 )
 
 type MainInput struct {
-	MysqlConfig    MockBinlogSyncerConfig // 源端mysql配置
-	BinlogReciever BinlogReciever
-	SyncInfo       BinlogSyncInfo
-	EventSource string        // 事件源
-	EventType   string        // 事件类型
+	SourceCfg      *canal.Config  // 源mysql配置
+	BinlogReciever BinlogReciever // binlog接受者配置。目前通过http发送远端
+	SyncFrom       BinlogSyncInfo // 从什么gtid或者位点开始同步binlog
+	EventSource    string         // cloud event 事件源
+	EventType      string         // cloud event 事件类型
 }
 
 // 通过位点或者gtid同步
@@ -36,35 +36,5 @@ func (r *BinlogSyncInfo) IsFromGtid() bool {
 
 // 接受binlog的接口信息
 type BinlogReciever struct {
-	Url    string // binlog发送的接口
-}
-
-// 配置 参考 replication.BinlogSyncerConfig
-type MockBinlogSyncerConfig struct {
-	ServerID uint32
-
-	Flavor string
-
-	Host string
-
-	Port uint16
-
-	User string
-
-	Password string
-
-	Charset string
-}
-
-func (r *MockBinlogSyncerConfig) To() replication.BinlogSyncerConfig {
-	var config = replication.BinlogSyncerConfig{
-		ServerID: r.ServerID,
-		Flavor:   r.Flavor,
-		Host:     r.Host,
-		Port:     r.Port,
-		User:     r.User,
-		Password: r.Password,
-		Charset:  r.Charset,
-	}
-	return config
+	Url string // binlog发送的接口
 }
