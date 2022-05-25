@@ -30,17 +30,17 @@ func NewBinlogHttpWirter(url string, eventSource string, eventType string) *Binl
 	}
 }
 
-func (r *BinlogHttpWirter) Write(binlogBytes []byte) (bytesSent int, err error) {
+func (r *BinlogHttpWirter) Write(dd interface{}) (err error) {
 	event := cloudevents.NewEvent()
 	event.SetSource(r.eventSource)
 	event.SetType(r.eventType)
-	_ = event.SetData(cloudevents.ApplicationJSON, map[string]string{"data": string(binlogBytes)})
+	_ = event.SetData(cloudevents.ApplicationJSON, dd)
 
 	err = r.client.Send(r.ctx, event)
 	if cloudevents.IsUndelivered(err) {
 		fmt.Println(fmt.Sprintf("write fail %+v", err))
-		return 0, err
+		return err
 	}
 	fmt.Println(fmt.Sprintf("write event done %+v", err))
-	return len(binlogBytes), nil
+	return nil
 }

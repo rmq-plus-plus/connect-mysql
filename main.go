@@ -21,7 +21,7 @@ func main() {
 		fmt.Println("输入参数文件读取失败" + err1.Error())
 		return
 	}
-	var input = &MainInput{}
+	var input = &river.MainInput{}
 	err2 := json.Unmarshal([]byte(inputString), input)
 	if err2 != nil {
 		fmt.Println("输入参数解析失败" + err2.Error() + "\n" + inputString)
@@ -30,7 +30,7 @@ func main() {
 	initInput(input)
 }
 
-func initInput(input *MainInput) {
+func initInput(input *river.MainInput) {
 	writer := river.NewBinlogHttpWirter(input.BinlogReciever.Url, input.EventSource, input.EventType)
 	var binlogDumper = river.NewBinlogDumper(
 		input.SourceCfg,
