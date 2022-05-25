@@ -2,12 +2,10 @@ package river
 
 import (
 	"01-connect-mysql/main/utils"
-	"encoding/json"
 	"fmt"
 	"github.com/go-mysql-org/go-mysql/canal"
 	"github.com/go-mysql-org/go-mysql/mysql"
 	"github.com/go-mysql-org/go-mysql/replication"
-	"io"
 )
 
 type MyBinlogEvent struct {
@@ -18,10 +16,10 @@ type MyBinlogEvent struct {
 }
 
 type BinlogHandler struct {
-	Sender io.Writer
+	Sender *BinlogHttpWirter
 }
 
-func NewHandler(sender io.Writer) *BinlogHandler {
+func NewHandler(sender *BinlogHttpWirter) *BinlogHandler {
 	return &BinlogHandler{
 		Sender: sender,
 	}
@@ -63,9 +61,9 @@ func (s *BinlogHandler) OnRow(rowsEvent *canal.RowsEvent) error {
 			list = append(list, utils.ToString(rowsEvent.Rows[rowIndex][colIndex]))
 		}
 		dd.Data = list
-		bytes, _ := json.Marshal(dd)
-		n, err := s.Sender.Write(bytes)
-		fmt.Println(fmt.Sprintf("OnRow 发送结果:%v,error: %+v, 发送字节数: %d", err == nil, err, n))
+		//bytes, _ := json.Marshal(dd)
+		err := s.Sender.Write(dd)
+		fmt.Println(fmt.Sprintf("OnRow 发送结果:%v,error: %+v", err == nil, err))
 	}
 	return nil
 }

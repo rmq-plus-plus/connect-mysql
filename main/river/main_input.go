@@ -1,4 +1,4 @@
-package main
+package river
 
 import (
 	"github.com/go-mysql-org/go-mysql/canal"
