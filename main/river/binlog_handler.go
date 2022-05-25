@@ -1,6 +1,7 @@
 package river
 
 import (
+	"01-connect-mysql/main/utils"
 	"encoding/json"
 	"fmt"
 	"github.com/go-mysql-org/go-mysql/canal"
@@ -10,11 +11,12 @@ import (
 )
 
 type MyBinlogEvent struct {
-	DatabaseName string
-	TableName    string //
-	EventData    string // 不同EventType，对应不同的数据结构
-	EventType    string //  key枚举：RotateEvent，QueryEvent，RowsEvent
+	DatabaseName string   //
+	TableName    string   //
+	Data         []string // 一次一行， 这里包含每个字段的值
+	EventType    string   //  key枚举：RotateEvent，QueryEvent，RowsEvent
 }
+
 type BinlogHandler struct {
 	Sender io.Writer
 }
@@ -38,16 +40,6 @@ func (s *BinlogHandler) OnTableChanged(schema, table string) error {
 
 // ddl
 func (s *BinlogHandler) OnDDL(nextPos mysql.Position, event *replication.QueryEvent) error {
-	ee := &MyBinlogEvent{
-		DatabaseName: string(event.Schema),
-		EventType:    "QueryEvent",
-	}
-	ee1, _ := json.Marshal(event) // 出来的query是base64后的
-	ee.EventData = string(ee1)
-	bb, _ := json.Marshal(ee)
-
-	n, err := s.Sender.Write(bb)
-	fmt.Println(fmt.Sprintf("OnDDL发送结果: %v,error: %+v, 发送字节数: %d", err == nil, err, n))
 	return nil
 }
 
@@ -57,18 +49,24 @@ func (s *BinlogHandler) OnXID(nextPos mysql.Position) error {
 
 // dml
 func (s *BinlogHandler) OnRow(rowsEvent *canal.RowsEvent) error {
-	ee := &MyBinlogEvent{
-		DatabaseName: rowsEvent.Table.Schema,
-		TableName:    rowsEvent.Table.Name,
-		EventType: "RowsEvent",
+	if len(rowsEvent.Rows) <= 0 {
+		return nil
 	}
-	ee1, _ := json.Marshal(rowsEvent)
-	ee.EventData = string(ee1)
-
-	bb, _ := json.Marshal(ee)
-
-	n, err := s.Sender.Write(bb)
-	fmt.Println(fmt.Sprintf("OnRow 发送结果:%v,error: %+v, 发送字节数: %d", err == nil, err, n))
+	for rowIndex := range rowsEvent.Rows {
+		dd := &MyBinlogEvent{
+			DatabaseName: rowsEvent.Table.Schema,
+			TableName:    rowsEvent.Table.Name,
+			EventType:    "RowsEvent",
+		}
+		list := []string{}
+		for colIndex := range rowsEvent.Rows[rowIndex] {
+			list = append(list, utils.ToString(rowsEvent.Rows[rowIndex][colIndex]))
+		}
+		dd.Data = list
+		bytes, _ := json.Marshal(dd)
+		n, err := s.Sender.Write(bytes)
+		fmt.Println(fmt.Sprintf("OnRow 发送结果:%v,error: %+v, 发送字节数: %d", err == nil, err, n))
+	}
 	return nil
 }
 

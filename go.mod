@@ -5,7 +5,6 @@ go 1.17
 require (
 	github.com/cloudevents/sdk-go/v2 v2.9.0
 	github.com/go-mysql-org/go-mysql v1.4.0
-	github.com/gogf/gf v1.16.8
 	github.com/gogf/gf/v2 v2.0.6
 )
 

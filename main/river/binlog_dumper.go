@@ -13,8 +13,7 @@ type BinlogDumper struct {
 }
 
 func NewBinlogDumper(config *canal.Config, handler canal.EventHandler) *BinlogDumper {
-	binlogDumper := &BinlogDumper{
-	}
+	binlogDumper := &BinlogDumper{}
 	cccanal, err := canal.NewCanal(config)
 	if err != nil {
 		fmt.Println("初始化binlog dumper失败。配置错误" + err.Error())
